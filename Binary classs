@@ -1,0 +1,315 @@
+#include <iostream>
+#include <queue>
+#include <algorithm>
+using namespace std;
+
+template <typename T>
+class Node
+{
+public:
+    T data;
+    Node<T>* left;
+    Node<T>* right;
+
+    Node(T val)
+    {
+        data = val;
+        left = nullptr;
+        right = nullptr;
+    }
+};
+
+template <typename T>
+class BinaryTree
+{
+public:
+    Node<T>* root;
+
+    BinaryTree()
+    {
+        root = nullptr;
+    }
+
+    //       INSERTION
+    void setroot(T val)
+    {
+        if (!root)
+            root = new Node<T>(val);
+    }
+
+    Node<T>* parentnode(Node<T>* r, T val)
+    {
+        if (!r) return nullptr;
+        if (r->data == val) return r;
+
+        Node<T>* left = parentnode(r->left, val);
+        if (left) return left;
+
+        return parentnode(r->right, val);
+    }
+
+    void setleft(T parent, T child)
+    {
+        Node<T>* p = parentnode(root, parent);
+        if (p && !p->left)
+            p->left = new Node<T>(child);
+    }
+
+    void setright(T parent, T child)
+    {
+        Node<T>* p = parentnode(root, parent);
+        if (p && !p->right)
+            p->right = new Node<T>(child);
+    }
+
+    Node<T>* search(Node<T>* r, T val)
+    {
+        if (!r || r->data == val)
+            return r;
+
+        if (val < r->data)
+            return search(r->left, val);
+
+        return search(r->right, val);
+    }
+
+    Node<T>* FindNode(Node<T>* r, T val)
+    {
+        if (!r) return nullptr;
+        if (r->data == val) return r;
+
+        Node<T>* leftsearch = FindNode(r->left, val);
+        if (leftsearch) return leftsearch;
+
+        return FindNode(r->right, val);
+    }
+
+    void preorder(Node<T>* r)
+    {
+        if (!r) return;
+        cout << r->data << " ";
+        preorder(r->left);
+        preorder(r->right);
+    }
+
+    void inorder(Node<T>* r)
+    {
+        if (!r) return;
+        inorder(r->left);
+        cout << r->data << " ";
+        inorder(r->right);
+    }
+
+    void postorder(Node<T>* r)
+    {
+        if (!r) return;
+        postorder(r->left);
+        postorder(r->right);
+        cout << r->data << " ";
+    }
+
+    void levelorder()
+    {
+        if (!root) return;
+
+        queue<Node<T>*> q;
+        q.push(root);
+
+        while (!q.empty())
+        {
+            Node<T>* curr = q.front();
+            q.pop();
+
+            cout << curr->data << " ";
+
+            if (curr->left) q.push(curr->left);
+            if (curr->right) q.push(curr->right);
+        }
+    }
+
+
+    void deleteSubtree(Node<T>* node)
+    {
+        if (!node) return;
+        deleteSubtree(node->left);
+        deleteSubtree(node->right);
+        delete node;
+    }
+
+    void remove_specific(T parent, T child)
+    {
+        Node<T>* p = parentnode(root, parent);
+        if (!p) return;
+
+        Node<T>** target = nullptr;
+
+        if (p->left && p->left->data == child) target = &p->left;
+        else if (p->right && p->right->data == child) target = &p->right;
+
+        if (!target) return;
+
+        Node<T>* temp = *target;
+
+        if (!temp->left)
+            *target = temp->right;
+        else if (!temp->right)
+            *target = temp->left;
+        else
+        {
+            Node<T>* successor = temp->right;
+            while (successor->left)
+                successor = successor->left;
+
+            successor->left = temp->left;
+            *target = temp->right;
+        }
+
+        delete temp;
+    }
+
+    void remove_all_nodes(T parent, T child)
+    {
+        Node<T>* p = parentnode(root, parent);
+        if (!p) return;
+
+        if (p->left && p->left->data == child)
+        {
+            deleteSubtree(p->left);
+            p->left = nullptr;
+        }
+        else if (p->right && p->right->data == child)
+        {
+            deleteSubtree(p->right);
+            p->right = nullptr;
+        }
+    }
+
+    void reverse(Node<T>* r)
+    {
+        if (!r) return;
+        swap(r->left, r->right);
+        reverse(r->left);
+        reverse(r->right);
+    }
+
+    int height(Node<T>* r)
+    {
+        if (!r) return 0;
+        return 1 + max(height(r->left), height(r->right));
+    }
+
+    int countnodes(Node<T>* r)
+    {
+        if (!r) return 0;
+        return 1 + countnodes(r->left) + countnodes(r->right);
+    }
+
+    // Balance check
+    int check_balance(Node<T>* r)
+    {
+        if (!r) return 0;
+
+        int lh = check_balance(r->left);
+        int rh = check_balance(r->right);
+
+        if (lh == -1 || rh == -1 || abs(lh - rh) > 1)
+            return -1;
+
+        return 1 + max(lh, rh);
+    }
+
+    bool isBalanced(Node<T>* r)
+    {
+        return check_balance(r) != -1;
+    }
+
+    bool InternalNode(T val, Node<T>* r)
+    {
+        Node<T>* node = FindNode(r, val);
+        return node && (node->left || node->right);
+    }
+
+    bool ExternalNode(T val, Node<T>* r)
+    {
+        Node<T>* node = FindNode(r, val);
+        return node && (!node->left && !node->right);
+    }
+
+    // Parent find
+    T parentnode2(Node<T>* r, T child)
+    {
+        if (!r) return -1;
+
+        if ((r->left && r->left->data == child) || 
+            (r->right && r->right->data == child))
+            return r->data;
+
+        T left = parentnode2(r->left, child);
+        if (left != -1) return left;
+
+        return parentnode2(r->right, child);
+    }
+
+    void printDes(Node<T>* r)
+    {
+        if (!r) return;
+        cout << r->data << " ";
+        printDes(r->left);
+        printDes(r->right);
+    }
+
+    void print(Node<T>* r, T val)
+    {
+        Node<T>* target = FindNode(r, val);
+
+        if (!target)
+        {
+            cout << "Value not found\n";
+            return;
+        }
+
+        if (target->left) printDes(target->left);
+        if (target->right) printDes(target->right);
+    }
+
+    ~BinaryTree()
+    {
+        deleteSubtree(root);
+    }
+};
+
+int main()
+{
+    BinaryTree<int> b;
+
+    b.setroot(10);
+    b.setleft(10, 20);
+    b.setright(10, 40);
+    b.setleft(20, 30);
+    b.setleft(30, 50);
+    b.setright(30, 67);
+
+    cout << "Preorder: "; b.preorder(b.root); cout << endl;
+    cout << "Inorder: "; b.inorder(b.root); cout << endl;
+    cout << "Levelorder: "; b.levelorder(); cout << endl;
+
+    b.remove_specific(20, 30);
+    cout << "After deleting 30: "; b.preorder(b.root); cout << endl;
+
+    b.remove_all_nodes(10, 40);
+    cout << "After removing subtree 40: "; b.levelorder(); cout << endl;
+
+    cout << "Reversed tree: ";
+    b.reverse(b.root);
+    b.levelorder(); cout << endl;
+
+    cout << "Total nodes: " << b.countnodes(b.root) << endl;
+    cout << "Height: " << b.height(b.root) << endl;
+
+    cout << "Parent of 20: " << b.parentnode2(b.root, 20) << endl;
+
+    cout << "Descendants of 20: ";
+    b.print(b.root, 20);
+
+    return 0;
+}
